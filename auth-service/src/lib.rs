@@ -21,11 +21,12 @@ impl Application {
     pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
-            .route("/signup", get(signup))
-            .route("/login", get(login))
-            .route("/logout", get(logout))
-            .route("/verify_2fa", get(verify_2fa))
-            .route("/verify_token", get(verify_token));
+            .route("/foo", get(|| async { "ok" }))
+            .route("/signup", post(signup))
+            .route("/login", post(login))
+            .route("/logout", post(logout))
+            .route("/verify_2fa", post(verify_2fa))
+            .route("/verify_token", post(verify_token));
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
