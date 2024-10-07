@@ -1,5 +1,7 @@
 use crate::Application;
 
+use super::signup;
+
 use std::error::Error;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::{get, post}, Router};
@@ -29,9 +31,9 @@ impl Application {
     }
 }
 
-async fn signup() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
+// async fn signup() -> impl IntoResponse {
+//     StatusCode::OK.into_response()
+// }
 
 async fn login() -> impl IntoResponse {
     StatusCode::OK.into_response()
