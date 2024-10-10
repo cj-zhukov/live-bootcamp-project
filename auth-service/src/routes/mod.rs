@@ -5,7 +5,6 @@ mod verify_2fa;
 mod verify_token;
 mod route_handler;
 
-// re-export items from sub-modules
 pub use login::*;
 pub use logout::*;
 pub use signup::*;

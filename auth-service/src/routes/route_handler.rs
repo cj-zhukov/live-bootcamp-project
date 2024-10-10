@@ -15,8 +15,8 @@ impl Application {
             .route("/signup", post(signup))
             .route("/login", post(login))
             .route("/logout", post(logout))
-            .route("/verify_2fa", post(verify_2fa))
-            .route("/verify_token", post(verify_token));
+            .route("/verify-2fa", post(verify_2fa))
+            .route("/verify-token", post(verify_token));
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -30,10 +30,6 @@ impl Application {
         self.server.await
     }
 }
-
-// async fn signup() -> impl IntoResponse {
-//     StatusCode::OK.into_response()
-// }
 
 async fn login() -> impl IntoResponse {
     StatusCode::OK.into_response()
