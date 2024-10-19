@@ -3,7 +3,7 @@ pub mod services;
 pub mod domain;
 pub mod app_state;
 
-use crate::services::hashmap_user_store::HashmapUserStore;
+use domain::data_stores::user_store::UserStore;
 use crate::domain::error::AuthAPIError;
 
 use std::sync::Arc;
@@ -14,6 +14,7 @@ use axum::{
     serve::Serve,
     Json, Router,
 };
+
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
@@ -28,7 +29,7 @@ impl Application {
     }
 }
 
-pub type UserStoreType = Arc<RwLock<HashmapUserStore>>;
+pub type UserStoreType = Arc<RwLock<dyn UserStore + Send + Sync>>;
 
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
