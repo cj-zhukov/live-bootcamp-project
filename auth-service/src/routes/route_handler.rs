@@ -1,10 +1,10 @@
 use crate::{app_state::app_state::AppState, Application};
 
-use super::signup;
+use super::{delete_account, signup};
 
 use std::error::Error;
 
-use axum::{http::StatusCode, response::IntoResponse, routing::{get, post}, Router};
+use axum::{http::StatusCode, response::IntoResponse, routing::{delete, get, post}, Router};
 use tower_http::services::ServeDir;
 
 impl Application {
@@ -17,6 +17,7 @@ impl Application {
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
+            .route("/delete-account", delete(delete_account))
             .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;

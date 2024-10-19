@@ -48,6 +48,13 @@ impl UserStore for HashmapUserStore {
             None => Err(UserStoreError::UserNotFound),
         }
     }
+
+    async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
+        let user = self.get_user(&user.email).await?;
+        self.users.remove(&user.email);
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -116,6 +123,26 @@ mod tests {
             )
             .await;
    
+        assert_eq!(res, Err(UserStoreError::UserNotFound));
+    }
+
+    #[tokio::test]
+    async fn test_delete_user() {
+        let mut map = HashmapUserStore::new();
+        let email = Email::parse("foo@com").unwrap();
+        let pwd = Password::parse("foobarbaz").unwrap();
+        let user = User::new(email.clone(), pwd, false);
+
+        // Test getting a user that exists
+        map.users.insert(email.clone(), user.clone());
+        let res = map.get_user(&email).await;
+        assert_eq!(res, Ok(user.clone()));
+
+        // Deleting user
+        map.delete_user(user.clone()).await.unwrap();
+
+        // Test getting a user that doesn't exist
+        let res = map.get_user(&user.email).await;
         assert_eq!(res, Err(UserStoreError::UserNotFound));
     }
 }
