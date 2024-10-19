@@ -37,11 +37,15 @@ impl UserStore for HashmapUserStore {
     }
     
     async fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
-        let user = self.get_user(email).await?;
-        if user.password == *password {
-            Ok(())
-        } else {
-            Err(UserStoreError::UserNotFound)
+        match self.users.get(email) {
+            Some(user) => {
+                if user.password.eq(password) {
+                    Ok(())
+                } else {
+                    Err(UserStoreError::InvalidCredentials)
+                }
+            }
+            None => Err(UserStoreError::UserNotFound),
         }
     }
 }
@@ -56,9 +60,14 @@ mod tests {
         let email = Email::parse("foo@com").unwrap();
         let pwd = Password::parse("foobarbaz").unwrap();
         let user = User::new(email, pwd, false);
-        map.add_user(user.clone()).await.unwrap();
-        let u = map.get_user(&user.email).await.unwrap();
-        assert_eq!(u, user);
+
+        // Test adding a new user
+        let res = map.add_user(user.clone()).await;
+        assert!(res.is_ok());
+
+        // Test adding an existing user
+        let res = map.add_user(user).await;
+        assert_eq!(res, Err(UserStoreError::UserAlreadyExists));
     }
 
     #[tokio::test]
@@ -66,10 +75,19 @@ mod tests {
         let mut map = HashmapUserStore::new();
         let email = Email::parse("foo@com").unwrap();
         let pwd = Password::parse("foobarbaz").unwrap();
-        let user = User::new(email, pwd, false);
-        map.add_user(user.clone()).await.unwrap();
-        let u = map.get_user(&user.email).await.unwrap();
-        assert_eq!(u, user);
+        let user = User::new(email.clone(), pwd, false);
+
+        // Test getting a user that exists
+        map.users.insert(email.clone(), user.clone());
+        let res = map.get_user(&email).await;
+        assert_eq!(res, Ok(user));
+
+        // Test getting a user that doesn't exist
+        let result = map
+            .get_user(&Email::parse("nonexistent@example.com").unwrap())
+            .await;
+   
+        assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
 
     #[tokio::test]
@@ -77,9 +95,27 @@ mod tests {
         let mut map = HashmapUserStore::new();
         let email = Email::parse("foo@com").unwrap();
         let pwd = Password::parse("foobarbaz").unwrap();
-        let user = User::new(email, pwd, false);
-        map.add_user(user.clone()).await.unwrap();
-        let res = map.validate_user(&user.email, &user.password).await.unwrap();
-        assert_eq!(res, ());
+        let user = User::new(email.clone(), pwd.clone(), false);
+
+
+        // Test validating a user that exists with correct password
+        map.users.insert(email.clone(), user.clone());
+        let res = map.validate_user(&email, &pwd).await;
+        assert_eq!(res, Ok(()));
+
+        // Test validating a user that exists with incorrect password
+        let wrong_password = Password::parse("wrongpassword").unwrap();
+        let res = map.validate_user(&email, &wrong_password).await;
+        assert_eq!(res, Err(UserStoreError::InvalidCredentials));
+
+        // Test validating a user that doesn't exist
+        let res = map
+            .validate_user(
+                &Email::parse("nonexistent@example.com").unwrap(),
+                &pwd,
+            )
+            .await;
+   
+        assert_eq!(res, Err(UserStoreError::UserNotFound));
     }
 }
