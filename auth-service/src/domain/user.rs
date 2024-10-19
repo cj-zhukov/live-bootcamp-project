@@ -1,7 +1,7 @@
 use super::email::Email;
 use super::password::Password;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct User {
     pub email: Email, 
     pub password: Password,
