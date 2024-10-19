@@ -29,16 +29,16 @@ impl UserStore for HashmapUserStore {
         } 
     }
 
-    async fn get_user(&self, email: Email) -> Result<User, UserStoreError> {
-        match self.users.get(&email) {
-            Some(u) => Ok(u.clone()),
+    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
+        match self.users.get(email) {
+            Some(u) => Ok(u.to_owned()),
             None => Err(UserStoreError::UserNotFound)
         }
     }
     
-    async fn validate_user(&self, email: Email, password: Password) -> Result<(), UserStoreError> {
+    async fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
-        if user.password == password {
+        if user.password == *password {
             Ok(())
         } else {
             Err(UserStoreError::UserNotFound)
@@ -57,7 +57,7 @@ mod tests {
         let pwd = Password::parse("foobarbaz").unwrap();
         let user = User::new(email, pwd, false);
         map.add_user(user.clone()).await.unwrap();
-        let u = map.get_user(user.email.clone()).await.unwrap();
+        let u = map.get_user(&user.email).await.unwrap();
         assert_eq!(u, user);
     }
 
@@ -68,7 +68,7 @@ mod tests {
         let pwd = Password::parse("foobarbaz").unwrap();
         let user = User::new(email, pwd, false);
         map.add_user(user.clone()).await.unwrap();
-        let u = map.get_user(user.email.clone()).await.unwrap();
+        let u = map.get_user(&user.email).await.unwrap();
         assert_eq!(u, user);
     }
 
@@ -79,7 +79,7 @@ mod tests {
         let pwd = Password::parse("foobarbaz").unwrap();
         let user = User::new(email, pwd, false);
         map.add_user(user.clone()).await.unwrap();
-        let res = map.validate_user(user.email, user.password).await.unwrap();
+        let res = map.validate_user(&user.email, &user.password).await.unwrap();
         assert_eq!(res, ());
     }
 }
