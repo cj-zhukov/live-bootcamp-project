@@ -49,11 +49,17 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        let user = self.get_user(&user.email).await?;
-        self.users.remove(&user.email);
+    // async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
+    //     let user = self.get_user(&user.email).await?;
+    //     self.users.remove(&user.email);
 
-        Ok(())
+    //     Ok(())
+    // }
+    async fn delete_user(&mut self, email: &Email) -> Result<(), UserStoreError> {
+        match self.users.remove(email) {
+            Some(_) => Ok(()),
+            None => Err(UserStoreError::UserNotFound)
+        }
     }
 }
 
@@ -139,7 +145,7 @@ mod tests {
         assert_eq!(res, Ok(user.clone()));
 
         // Deleting user
-        map.delete_user(user.clone()).await.unwrap();
+        map.delete_user(&email).await.unwrap();
 
         // Test getting a user that doesn't exist
         let res = map.get_user(&user.email).await;
