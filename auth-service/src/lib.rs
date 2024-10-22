@@ -2,6 +2,7 @@ pub mod routes;
 pub mod services;
 pub mod domain;
 pub mod app_state;
+pub mod utils;
 
 use app_state::app_state::AppState;
 use domain::data_stores::user_store::UserStore;
