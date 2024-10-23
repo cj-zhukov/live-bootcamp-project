@@ -13,11 +13,15 @@ use std::error::Error;
 use std::sync::Arc;
 
 use axum::{
-    http::StatusCode, response::{IntoResponse, Response}, routing::{delete, get, post}, serve::Serve, Json, Router
+    http::{Method, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{delete, get, post},
+    serve::Serve,
+    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tower_http::services::ServeDir;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -32,6 +36,18 @@ impl Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            "http://198.211.97.43:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            // Allow GET and POST requests
+            .allow_methods([Method::GET, Method::POST])
+            // Allow cookies to be included in requests
+            .allow_credentials(true)
+            .allow_origin(allowed_origins);
+
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/foo", get(|| async { "ok" }))
@@ -41,7 +57,8 @@ impl Application {
             .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
             .route("/delete-account", delete(delete_account))
-            .with_state(app_state);
+            .with_state(app_state)
+            .layer(cors);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -68,10 +85,10 @@ impl IntoResponse for AuthAPIError {
         let (status, error_message) = match self {
             Self::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             Self::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
-            Self::UnexpectedError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            },
-            Self::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Unauthorized")
+            Self::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
+            Self::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            Self::InvalidToken => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED"),
+            Self::MissingToken => (StatusCode::BAD_REQUEST, "Invalid credentials"),
         };
         
         let body = Json(ErrorResponse {
