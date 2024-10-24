@@ -4,6 +4,19 @@ use serde::{Deserialize, Serialize};
 use crate::app_state::app_state::AppState;
 use crate::domain::{email::Email, error::AuthAPIError, password::Password, user::User};
 
+#[derive(Deserialize)]
+pub struct SignupRequest {
+    pub email: String,
+    pub password: String,
+    #[serde(rename = "requires2FA")]
+    pub requires_2fa: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SignupResponse {
+    pub message: String,
+}
+
 pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
@@ -30,17 +43,4 @@ pub async fn signup(
     });
 
     Ok((StatusCode::CREATED, response))
-}
-
-#[derive(Deserialize)]
-pub struct SignupRequest {
-    pub email: String,
-    pub password: String,
-    #[serde(rename = "requires2FA")]
-    pub requires_2fa: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct SignupResponse {
-    pub message: String,
 }
