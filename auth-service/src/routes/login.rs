@@ -36,10 +36,6 @@ pub async fn login(
         return (jar, Err(AuthAPIError::IncorrectCredentials));
     }
 
-    let _response = Json(LoginResponse {
-        message: "User login successfully!".to_string(),
-    });
-
     let auth_cookie = match generate_auth_cookie(&email) {
         Ok(cookie) => cookie,
         Err(_e) => return (jar, Err(AuthAPIError::UnexpectedError)),

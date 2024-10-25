@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::domain::data_stores::banned_token_store::{BannedTokenStore, BannedTokenStoreError};  
 
@@ -16,14 +16,12 @@ impl HashsetBannedTokenStore {
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
     async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
-        if !self.token_exists(token).await {
-            let _res = self.tokens.insert(token.to_string());
-        }
+        self.tokens.insert(token.to_string());
         Ok(())
     }
 
-    async fn token_exists(&self, token: &str) -> bool {
-        self.tokens.contains(token)
+    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+        Ok(self.tokens.contains(token))
     }
 }
 
@@ -34,20 +32,23 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_token() {
-        let mut map = HashsetBannedTokenStore::new();
-        map.add_token("foo").await.unwrap();
-        let res = map.tokens.get("foo");
-        assert_eq!(res, Some(&"foo".to_string()));
+        let mut store = HashsetBannedTokenStore::new();
+        let token = "test_token".to_owned();
+
+        let res = store.add_token(&token).await;
+
+        assert!(res.is_ok());
+        assert!(store.tokens.contains(&token));
     }
 
     #[tokio::test]
-    async fn test_token_exists() {
-        let mut map = HashsetBannedTokenStore::new();
-        map.add_token("foo").await.unwrap();
-        let res = map.token_exists("foo").await;
-        assert_eq!(res, true);
+    async fn test_contains_token() {
+        let mut store = HashsetBannedTokenStore::default();
+        let token = "test_token".to_owned();
+        store.tokens.insert(token.clone());
 
-        let res = map.token_exists("bar").await;
-        assert_eq!(res, false);
+        let result = store.contains_token(&token).await;
+
+        assert!(result.unwrap());
     }
 }

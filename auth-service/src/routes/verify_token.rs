@@ -16,14 +16,8 @@ pub async fn verify_token(
     State(state): State<AppState>,
     Json(request): Json<VerifyTokenRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    if request.token.is_empty() {
-        return Err(AuthAPIError::MissingToken);
+    match validate_token(&request.token, state.token_store.clone()).await {
+        Ok(_) => Ok(StatusCode::OK),
+        Err(_) => Err(AuthAPIError::InvalidToken),
     }
-
-    let token_store = state.token_store;
-
-    let _res = validate_token(&request.token, token_store).await
-        .map_err(|_| AuthAPIError::InvalidToken)?;
-    
-    Ok(StatusCode::OK.into_response())
 }
