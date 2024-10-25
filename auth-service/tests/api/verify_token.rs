@@ -1,14 +1,18 @@
-use crate::helpers::{TestApp, get_random_email};
+use auth_service::{domain::email::Email, utils::auth::generate_auth_cookie};
 
-// use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use crate::helpers::{TestApp, get_random_email};
 
 // #[tokio::test]
 // async fn should_return_200_valid_token() {
 //     let app = TestApp::new().await;
 
-//     // how to add valid token 
+//     // add valid token 
+//     let email = get_random_email();
+//     let email = Email::parse(&email).unwrap();
+//     let token = generate_auth_cookie(&email).unwrap();
+//     let token = token.value();
 //     let input = serde_json::json!({
-//         "token": "foo",
+//         "token": token,
 //     });
 
 //     let response = app.post_verify_token(&input).await;

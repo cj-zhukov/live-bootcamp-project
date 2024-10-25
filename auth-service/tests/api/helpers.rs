@@ -5,23 +5,24 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use auth_service::{
-    services::hashmap_user_store::HashmapUserStore, 
-    app_state::app_state::AppState, 
-    utils::constants::test,
-    Application
+    app_state::app_state::AppState, domain::data_stores::banned_token_store::BannedTokenStore, services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore}, utils::constants::test, Application
 };
 
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub token_store: Box<dyn BannedTokenStore>,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = HashmapUserStore::new();
         let user_store = Arc::new(RwLock::new(user_store));
-        let app_state = AppState::new(user_store);
+        let token_store = HashsetBannedTokenStore::new();
+        let token_store_ref = Arc::new(RwLock::new(token_store.clone()));
+
+        let app_state = AppState::new(user_store, token_store_ref);
         
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -38,7 +39,7 @@ impl TestApp {
             .build()
             .unwrap();
 
-        Self { address, cookie_jar, http_client }
+        Self { address, cookie_jar, http_client, token_store: Box::new(token_store) }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {

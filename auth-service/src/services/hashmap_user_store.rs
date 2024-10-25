@@ -5,7 +5,6 @@ use crate::domain::password::Password;
 use crate::domain::user::User;
 use crate::domain::email::Email;
 
-
 #[derive(Default)]
 pub struct HashmapUserStore {
     pub users: HashMap<Email, User>
@@ -49,12 +48,6 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    // async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
-    //     let user = self.get_user(&user.email).await?;
-    //     self.users.remove(&user.email);
-
-    //     Ok(())
-    // }
     async fn delete_user(&mut self, email: &Email) -> Result<(), UserStoreError> {
         match self.users.remove(email) {
             Some(_) => Ok(()),

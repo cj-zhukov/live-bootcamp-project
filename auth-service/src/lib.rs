@@ -5,7 +5,7 @@ pub mod app_state;
 pub mod utils;
 
 use app_state::app_state::AppState;
-use domain::data_stores::user_store::UserStore;
+use domain::data_stores::{banned_token_store::BannedTokenStore, user_store::UserStore};
 use domain::error::AuthAPIError;
 use routes::*;
 
@@ -74,6 +74,7 @@ impl Application {
 }
 
 pub type UserStoreType = Arc<RwLock<dyn UserStore + Send + Sync>>;
+pub type BannedTokenStoreType = Arc<RwLock<dyn BannedTokenStore + Send + Sync>>;
 
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
