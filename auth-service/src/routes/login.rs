@@ -12,6 +12,17 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LoginResponse {
+    pub message: String,
+}
+
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -44,15 +55,4 @@ pub async fn login(
     let updated_jar = jar.add(auth_cookie);
 
     (updated_jar, Ok(StatusCode::OK.into_response()))
-}
-
-#[derive(Deserialize)]
-pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct LoginResponse {
-    pub message: String,
 }

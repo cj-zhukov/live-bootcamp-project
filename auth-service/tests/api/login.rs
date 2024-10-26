@@ -14,7 +14,6 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
@@ -23,7 +22,6 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     });
 
     let response = app.post_login(&login_body).await;
-
     assert_eq!(response.status().as_u16(), 200);
 
     let auth_cookie = response
@@ -47,7 +45,6 @@ async fn should_return_400_if_invalid_input() {
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let test_cases = vec![
@@ -96,7 +93,6 @@ async fn should_return_401_if_incorrect_credentials() {
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let test_cases = vec![
@@ -143,7 +139,6 @@ async fn should_return_422_if_malformed_credentials() {
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let test_cases = [

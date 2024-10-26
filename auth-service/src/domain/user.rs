@@ -5,7 +5,7 @@ use super::password::Password;
 pub struct User {
     pub email: Email, 
     pub password: Password,
-    pub requires_2fa: bool
+    pub requires_2fa: bool,
 }
 
 impl User {

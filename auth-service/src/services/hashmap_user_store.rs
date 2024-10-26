@@ -5,7 +5,7 @@ use crate::domain::password::Password;
 use crate::domain::user::User;
 use crate::domain::email::Email;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct HashmapUserStore {
     pub users: HashMap<Email, User>
 }
@@ -102,7 +102,6 @@ mod tests {
         let email = Email::parse("foo@com").unwrap();
         let pwd = Password::parse("foobarbaz").unwrap();
         let user = User::new(email.clone(), pwd.clone(), false);
-
 
         // Test validating a user that exists with correct password
         map.users.insert(email.clone(), user.clone());
