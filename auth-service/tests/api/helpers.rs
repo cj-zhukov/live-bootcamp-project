@@ -6,10 +6,15 @@ use uuid::Uuid;
 
 use auth_service::{
     app_state::app_state::AppState, 
-    services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore}, 
+    services::{
+        hashmap_two_fa_code_store::HashmapTwoFACodeStore, 
+        hashmap_user_store::HashmapUserStore, 
+        hashset_banned_token_store::HashsetBannedTokenStore,
+    }, 
     utils::constants::test, 
     Application, 
-    BannedTokenStoreType
+    BannedTokenStoreType, 
+    TwoFACodeStoreType
 };
 
 pub struct TestApp {
@@ -17,6 +22,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
     pub token_store: BannedTokenStoreType,
+    pub two_fa_code_store: TwoFACodeStoreType,
 }
 
 impl TestApp {
@@ -25,8 +31,10 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(user_store));
         let token_store = HashsetBannedTokenStore::new();
         let token_store = Arc::new(RwLock::new(token_store.clone()));
+        let two_fa_code_store = HashmapTwoFACodeStore::default();
+        let two_fa_code_store = Arc::new(RwLock::new(two_fa_code_store));
 
-        let app_state = AppState::new(user_store, token_store.clone());
+        let app_state = AppState::new(user_store, token_store.clone(), two_fa_code_store.clone());
         
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -43,7 +51,7 @@ impl TestApp {
             .build()
             .unwrap();
 
-        Self { address, cookie_jar, http_client, token_store }
+        Self { address, cookie_jar, http_client, token_store, two_fa_code_store }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
