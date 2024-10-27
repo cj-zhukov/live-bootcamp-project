@@ -27,32 +27,24 @@ pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    let email = match Email::parse(&request.email) {
-        Ok(email) => email,
-        Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
-    };
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+    let email = Email::parse(&request.email)
+        .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    let pwd = match Password::parse(&request.password) {
-        Ok(pwd) => pwd,
-        Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
-    };
+    let pwd = Password::parse(&request.password)
+        .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user_store = &state.user_store.read().await;
-    if let Err(_e) = user_store.validate_user(&email, &pwd).await {
-        return (jar, Err(AuthAPIError::IncorrectCredentials));
-    }
+    user_store.validate_user(&email, &pwd).await
+        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
-    if let Err(_e) = user_store.get_user(&email).await {
-        return (jar, Err(AuthAPIError::IncorrectCredentials));
-    }
+    user_store.get_user(&email).await
+        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
-    let auth_cookie = match generate_auth_cookie(&email) {
-        Ok(cookie) => cookie,
-        Err(_e) => return (jar, Err(AuthAPIError::UnexpectedError)),
-    };
+    let auth_cookie = generate_auth_cookie(&email)
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
 
     let updated_jar = jar.add(auth_cookie);
 
-    (updated_jar, Ok(StatusCode::OK.into_response()))
+    Ok((updated_jar, StatusCode::OK.into_response()))
 }
