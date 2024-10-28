@@ -1,5 +1,5 @@
 use dotenvy::dotenv;
-use std::{env as std_env, sync::LazyLock};
+use std::env as std_env;
 use lazy_static::lazy_static;
 
 // TODO note: see issue #109736 <https://github.com/rust-lang/rust/issues/109736> for more information 
