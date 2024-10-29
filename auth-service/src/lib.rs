@@ -5,13 +5,8 @@ pub mod app_state;
 pub mod utils;
 
 use app_state::app_state::AppState;
-use domain::data_stores::two_fa_code_store::TwoFACodeStore;
-use domain::data_stores::{banned_token_store::BannedTokenStore, user_store::UserStore};
 use domain::error::AuthAPIError;
 use routes::*;
-
-use std::error::Error;
-use std::sync::Arc;
 
 use axum::{
     http::{Method, StatusCode},
@@ -21,7 +16,7 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
+use std::error::Error;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub struct Application {
@@ -73,10 +68,6 @@ impl Application {
         self.server.await
     }
 }
-
-pub type UserStoreType = Arc<RwLock<dyn UserStore + Send + Sync>>;
-pub type BannedTokenStoreType = Arc<RwLock<dyn BannedTokenStore + Send + Sync>>;
-pub type TwoFACodeStoreType = Arc<RwLock<dyn TwoFACodeStore + Send + Sync>>;
 
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {

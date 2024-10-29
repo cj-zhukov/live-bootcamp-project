@@ -78,7 +78,11 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
     let mut code_store = state.two_fa_code_store.write().await;
-    code_store.add_code(email.clone(), login_attempt_id.clone(), two_fa_code).await
+    code_store.add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone()).await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
+
+    let email_client = state.email_client.read().await;
+    email_client.send_email(email, "2fa subject", two_fa_code.as_ref()).await
         .map_err(|_| AuthAPIError::UnexpectedError)?;
     
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
@@ -86,5 +90,5 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
         login_attempt_id: login_attempt_id.as_ref().to_string(),
     }));
 
-    Ok((jar, StatusCode::OK, response))
+    Ok((jar, StatusCode::PARTIAL_CONTENT, response))
 }

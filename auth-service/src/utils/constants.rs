@@ -1,8 +1,6 @@
 use dotenvy::dotenv;
 use std::{env as std_env, sync::LazyLock};
-// use lazy_static::lazy_static;
 
-// TODO note: see issue #109736 <https://github.com/rust-lang/rust/issues/109736> for more information 
 pub static JWT_SECRET: LazyLock<String> = LazyLock::new(|| {
     dotenv().ok();
     let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
@@ -11,18 +9,6 @@ pub static JWT_SECRET: LazyLock<String> = LazyLock::new(|| {
     }
     secret
 });
-// lazy_static! {
-//     pub static ref JWT_SECRET: String = set_token();
-// }
-
-// fn set_token() -> String {
-//     dotenv().ok(); // Load environment variables
-//     let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
-//     if secret.is_empty() {
-//         panic!("JWT_SECRET must not be empty.");
-//     }
-//     secret
-// }
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";

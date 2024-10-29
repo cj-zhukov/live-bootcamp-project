@@ -5,16 +5,14 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use auth_service::{
-    app_state::app_state::AppState, 
+    app_state::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, 
     services::{
         hashmap_two_fa_code_store::HashmapTwoFACodeStore, 
         hashmap_user_store::HashmapUserStore, 
-        hashset_banned_token_store::HashsetBannedTokenStore,
+        hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
     }, 
     utils::constants::test, 
     Application, 
-    BannedTokenStoreType, 
-    TwoFACodeStoreType
 };
 
 pub struct TestApp {
@@ -33,8 +31,10 @@ impl TestApp {
         let token_store = Arc::new(RwLock::new(token_store.clone()));
         let two_fa_code_store = HashmapTwoFACodeStore::default();
         let two_fa_code_store = Arc::new(RwLock::new(two_fa_code_store));
+        let email_client = MockEmailClient;
+        let email_client = Arc::new(RwLock::new(email_client));
 
-        let app_state = AppState::new(user_store, token_store.clone(), two_fa_code_store.clone());
+        let app_state = AppState::new(user_store, token_store.clone(), two_fa_code_store.clone(), email_client);
         
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await

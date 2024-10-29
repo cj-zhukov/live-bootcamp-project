@@ -33,10 +33,9 @@ pub async fn signup(
     if let Ok(_u) = user_store.get_user(&email).await {
         return Err(AuthAPIError::UserAlreadyExists);
     }
-
-    if let Err(_e) = user_store.add_user(user).await {
-        return Err(AuthAPIError::UnexpectedError);
-    }
+    
+    user_store.add_user(user).await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
 
     let response = Json(SignupResponse {
         message: "User created successfully!".to_string(),

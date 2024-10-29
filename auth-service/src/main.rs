@@ -7,7 +7,7 @@ use auth_service::{
     services::{
         hashmap_two_fa_code_store::HashmapTwoFACodeStore, 
         hashmap_user_store::HashmapUserStore, 
-        hashset_banned_token_store::HashsetBannedTokenStore
+        hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient
     }, 
     utils::constants::prod, 
     Application
@@ -21,9 +21,10 @@ async fn main() {
     let token_store = Arc::new(RwLock::new(token_store));
     let two_fa_code_store = HashmapTwoFACodeStore::default();
     let two_fa_code_store = Arc::new(RwLock::new(two_fa_code_store));
+    let email_client = MockEmailClient;
+    let email_client = Arc::new(RwLock::new(email_client));
 
-    let app_state = AppState::new(user_store, token_store, two_fa_code_store);
-
+    let app_state = AppState::new(user_store, token_store, two_fa_code_store, email_client);
     let app = Application::build(app_state, prod::APP_ADDRESS)
         .await
         .expect("Failed to build app");
