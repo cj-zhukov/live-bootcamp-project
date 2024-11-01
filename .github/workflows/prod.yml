@@ -1,5 +1,8 @@
 name: Build, Test and Deploy to Prod
 
+runs:
+  using: 'node20'
+
 # Trigger the workflow when changes are pushed to the main branch
 on:
   push:
@@ -20,7 +23,6 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        node-version: 20
         path: |
           app-service/.cargo
           app-service/target/
