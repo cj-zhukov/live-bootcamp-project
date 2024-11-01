@@ -10,7 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    using: 'node20'
 
     steps:
       # Checkout code from the repository
@@ -28,6 +27,8 @@ jobs:
           auth-service/target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
+        with:
+          node-version: 16
 
     - name: Install Rust
       run: rustup update stable && rustup default stable
