@@ -1,10 +1,32 @@
 use crate::helpers::TestApp;
 
 #[tokio::test]
-async fn test_verify_2fa() {
-    let app = TestApp::new().await;
+async fn should_return_200_if_correct_code() {
+    todo!()
+}
 
-    let response = app.verify_2fa().await;
+#[tokio::test]
+async fn should_return_400_if_invalid_input() {
+    todo!()
+}
 
-    assert_eq!(response.status().as_u16(), 200);
+#[tokio::test]
+async fn should_return_401_if_incorrect_credentials() {
+    todo!()
+}
+
+#[tokio::test]
+async fn should_return_401_if_old_code() {
+    // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail. 
+    todo!()
+}
+
+#[tokio::test]
+async fn should_return_401_if_same_code_twice() {    
+    todo!()
+}
+
+#[tokio::test]
+async fn should_return_422_if_malformed_input() {
+    todo!()
 }

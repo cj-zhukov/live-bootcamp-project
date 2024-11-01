@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
 use crate::domain::email::Email;
@@ -16,22 +17,22 @@ pub enum TwoFACodeStoreError {
     UnexpectedError,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
     pub fn parse(id: String) -> Result<Self, String> {
-        let s = Uuid::try_parse(&id)
+        let s = Uuid::parse_str(&id)
             .map_err(|e| format!("failed parsing id: {} to uuid cause: {}", id, e))?;
 
-        Ok(LoginAttemptId(s.to_string()))
+        Ok(Self(s.to_string()))
     }
 }
 
 impl Default for LoginAttemptId {
     fn default() -> Self {
         let id = Uuid::new_v4().to_string();
-        LoginAttemptId(id)
+        Self(id)
     }
 }
 
@@ -41,14 +42,23 @@ impl AsRef<str> for LoginAttemptId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TwoFACode(String);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self, String> {
-        match code.len() == 6 && code.chars().all(char::is_numeric) {
-            true => Ok(Self(code)),
-            false => Err(format!("failed parsing code: {}", code)),
+        // match code.len() == 6 && code.chars().all(char::is_numeric) {
+        //     true => Ok(Self(code)),
+        //     false => Err(format!("failed parsing code: {}", code)),
+        // }
+        let code_as_u32 = code
+            .parse::<u32>()
+            .map_err(|_| "Invalid 2FA code".to_owned())?;
+
+        if (100_000..=999_999).contains(&code_as_u32) {
+            Ok(Self(code))
+        } else {
+            Err("Invalid 2FA code".to_owned())
         }
     }
 }
