@@ -1,8 +1,5 @@
 name: Build, Test and Deploy to Prod
 
-runs:
-  using: 'node20'
-
 # Trigger the workflow when changes are pushed to the main branch
 on:
   push:
@@ -13,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    using: 'node20'
 
     steps:
       # Checkout code from the repository
