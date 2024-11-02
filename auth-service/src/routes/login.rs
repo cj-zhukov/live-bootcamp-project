@@ -76,7 +76,7 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
         .map_err(|_| AuthAPIError::UnexpectedError)?;
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
-        message: "2FA code".to_owned(),
+        message: "2FA required".to_owned(),
         login_attempt_id: login_attempt_id.as_ref().to_string(),
     }));
 
