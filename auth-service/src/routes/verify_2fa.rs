@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     app_state::app_state::AppState, 
     domain::{
-        data_stores::two_fa_code_store::{LoginAttemptId, TwoFACode}, 
+        data_stores::{LoginAttemptId, TwoFACode}, 
         email::Email, error::AuthAPIError
     }, utils::auth::generate_auth_cookie
 };

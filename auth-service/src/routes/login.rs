@@ -1,7 +1,7 @@
 use crate::{
     app_state::app_state::AppState, 
     domain::{
-        data_stores::two_fa_code_store::{LoginAttemptId, TwoFACode}, email::Email, error::AuthAPIError, password::Password
+        data_stores::{LoginAttemptId, TwoFACode}, email::Email, error::AuthAPIError, password::Password
     },
     utils::auth::generate_auth_cookie,
 };

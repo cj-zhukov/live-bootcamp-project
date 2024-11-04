@@ -1,3 +1,15 @@
+use axum::{
+    http::{Method, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    serve::Serve,
+    Json, Router,
+};
+use serde::{Deserialize, Serialize};
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::error::Error;
+use tower_http::{cors::CorsLayer, services::ServeDir};
+
 pub mod routes;
 pub mod services;
 pub mod domain;
@@ -7,17 +19,6 @@ pub mod utils;
 use app_state::app_state::AppState;
 use domain::error::AuthAPIError;
 use routes::*;
-
-use axum::{
-    http::{Method, StatusCode},
-    response::{IntoResponse, Response},
-    routing::{get, post},
-    serve::Serve,
-    Json, Router,
-};
-use serde::{Deserialize, Serialize};
-use std::error::Error;
-use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -91,4 +92,9 @@ impl IntoResponse for AuthAPIError {
         
         (status, body).into_response()
     }
+}
+
+pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    // Create a new PostgreSQL connection pool
+    PgPoolOptions::new().max_connections(5).connect(url).await
 }

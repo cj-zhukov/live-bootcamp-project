@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::data_stores::user_store::{UserStore, UserStoreError};
+use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::password::Password;
 use crate::domain::user::User;
 use crate::domain::email::Email;

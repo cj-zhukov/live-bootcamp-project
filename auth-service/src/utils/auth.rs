@@ -7,9 +7,6 @@ use crate::{app_state::app_state::BannedTokenStoreType, domain::email::Email};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
-// This is definitely NOT a good secret. We will update it soon!
-// const JWT_SECRET: &str = "secret";
-
 // Create cookie with a new JWT auth token
 pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
     let token = generate_auth_token(email)?;
@@ -99,7 +96,8 @@ mod tests {
     use std::sync::Arc;
     use tokio::sync::RwLock;
 
-    use crate::{domain::data_stores::banned_token_store::BannedTokenStore, services::hashset_banned_token_store::HashsetBannedTokenStore};
+    use crate::{domain::data_stores::BannedTokenStore, services::data_stores::HashsetBannedTokenStore};
+
     use super::*;
 
     #[tokio::test]

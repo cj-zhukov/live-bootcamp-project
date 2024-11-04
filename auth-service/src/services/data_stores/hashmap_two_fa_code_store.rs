@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::domain::{
-    data_stores::two_fa_code_store::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
+    data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
     email::Email,
 };
 

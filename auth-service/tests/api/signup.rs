@@ -1,14 +1,16 @@
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 use auth_service::{routes::SignupResponse, ErrorResponse};
 
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
     let app = TestApp::new().await;
 
+    let random_email = get_random_email();
+
     let test_case = serde_json::json!({
-        "email": "email@com",
+        "email": random_email,
         "password": "foobarbaz",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     let response = app.post_signup(&test_case).await;
@@ -26,6 +28,7 @@ async fn should_return_201_if_valid_input() {
         expected_response
     );
 }
+
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
@@ -67,8 +70,10 @@ async fn should_return_400_if_invalid_input() {
 async fn should_return_409_if_email_already_exists() {
     let app = TestApp::new().await;
 
+    let random_email = get_random_email();
+    
     let input = serde_json::json!({
-        "email": "test@mail",
+        "email": random_email,
         "password": "password123",
         "requires2FA": true
     });

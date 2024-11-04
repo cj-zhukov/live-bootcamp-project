@@ -1,5 +1,9 @@
 use auth_service::{
-    domain::{data_stores::two_fa_code_store::{LoginAttemptId, TwoFACode}, email::Email}, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse
+    domain::{data_stores::{LoginAttemptId, TwoFACode}, 
+    email::Email}, 
+    routes::TwoFactorAuthResponse, 
+    utils::constants::JWT_COOKIE_NAME, 
+    ErrorResponse
 };
 
 use crate::helpers::{get_random_email, TestApp};
