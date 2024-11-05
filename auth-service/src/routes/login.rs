@@ -1,7 +1,7 @@
 use crate::{
     app_state::app_state::AppState, 
     domain::{
-        data_stores::{LoginAttemptId, TwoFACode}, email::Email, error::AuthAPIError, password::Password
+        data_stores::{LoginAttemptId, TwoFACode, UserStoreError}, email::Email, error::AuthAPIError, password::Password
     },
     utils::auth::generate_auth_cookie,
 };
@@ -45,13 +45,23 @@ pub async fn login(
     user_store.validate_user(&email, &pwd).await
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
-    let user = user_store.get_user(&email).await
-        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
-
-    match user.requires_2fa {
-        true => handle_2fa(&email, &state, jar).await,
-        false => handle_no_2fa(&email, jar).await,
+    // let user = user_store.get_user(&email).await
+    //     .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+    match user_store.get_user(&email).await {
+        Ok(user) => match user.requires_2fa {
+            true => handle_2fa(&email, &state, jar).await,
+            false => handle_no_2fa(&email, jar).await,
+        },
+        Err(e) => match e {
+            UserStoreError::UserNotFound | UserStoreError::InvalidCredentials => return Err(AuthAPIError::InvalidCredentials),
+            _ => return Err(AuthAPIError::UnexpectedError)
+        }
     }
+
+    // match user.requires_2fa {
+    //     true => handle_2fa(&email, &state, jar).await,
+    //     false => handle_no_2fa(&email, jar).await,
+    // }
 }
 
 async fn handle_no_2fa(email: &Email, jar: CookieJar) -> Result<(CookieJar, (StatusCode, Json<LoginResponse>)), AuthAPIError> {

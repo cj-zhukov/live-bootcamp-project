@@ -8,7 +8,7 @@ use argon2::{
 use serde::{Serialize, Deserialize};
 use sqlx::PgPool;
 
-use crate::{domain::{data_stores::{UserStore, UserStoreError}, email::Email, password::Password, user::User}, utils::constants::PG_TABLE_NAME};
+use crate::{domain::{data_stores::{UserStore, UserStoreError}, email::Email, password::Password, user::User}, utils::{auth::validate_token, constants::PG_TABLE_NAME}};
 
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]
 pub struct Users {
@@ -30,27 +30,12 @@ impl PostgresUserStore {
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        // let task = tokio::task::spawn_blocking(move || {
-        //     let pwd = compute_password_hash(user.password.as_ref().to_string());
-        //     match pwd {
-        //         Ok(pwd) => Ok(pwd),
-        //         Err(_) => Err(UserStoreError::InvalidCredentials),
-        //     }
-        // }).await;
-        // let password = match task {
-        //     Ok(res) => match res {
-        //         Ok(pwd) => pwd,
-        //         Err(_) => return Err(UserStoreError::InvalidCredentials),
-                
-        //     },
-        //     Err(_) => return Err(UserStoreError::UnexpectedError),
-        // };
-        // if let Ok(_) = self.get_user(&user.email).await {
-        //     return Err(UserStoreError::UserAlreadyExists);
-        // }
-
-        let password = compute_password_hash(user.password.as_ref().to_string())
-            .map_err(|_| UserStoreError::InvalidCredentials)?;
+        let task = tokio::task::spawn_blocking(move || {
+            compute_password_hash(user.password.as_ref().to_string())
+                .map_err(|_| UserStoreError::InvalidCredentials)
+        });
+        let task = task.await.map_err(|_| UserStoreError::UnexpectedError)?;
+        let password = task.map_err(|_| UserStoreError::InvalidCredentials)?;
 
         let sql = format!("insert into {} (email, password_hash, requires_2fa) values ($1, $2, $3)", PG_TABLE_NAME);
         let query = sqlx::query(&sql);
@@ -96,10 +81,18 @@ impl UserStore for PostgresUserStore {
             }
         };
 
-        if let Err(_) = verify_password_hash(&data.password_hash, password.as_ref()) {    
+        let pwd_hash = data.password_hash;
+        let pwd = password.as_ref().to_string();
+        let task = tokio::task::spawn_blocking(|| {
+            verify_password_hash(pwd_hash, pwd)
+                .map_err(|_| UserStoreError::InvalidCredentials)
+        });
+        let task = task.await.map_err(|_| UserStoreError::UnexpectedError)?;
+
+        if let Err(_) = task {    
             return Err(UserStoreError::InvalidCredentials);
         }
-
+            
         Ok(())
     }
 
@@ -118,10 +111,10 @@ impl UserStore for PostgresUserStore {
 // separate thread pool using tokio::task::spawn_blocking. Note that you
 // will need to update the input parameters to be String types instead of &str
 fn verify_password_hash(
-    expected_password_hash: &str,
-    password_candidate: &str,
+    expected_password_hash: String,
+    password_candidate: String,
 ) -> Result<(), Box<dyn Error>> {
-    let expected_password_hash: PasswordHash<'_> = PasswordHash::new(expected_password_hash)?;
+    let expected_password_hash: PasswordHash<'_> = PasswordHash::new(&expected_password_hash)?;
 
     Argon2::default()
         .verify_password(password_candidate.as_bytes(), &expected_password_hash)
