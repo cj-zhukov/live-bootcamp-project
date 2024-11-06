@@ -8,8 +8,9 @@ use uuid::Uuid;
 use auth_service::{
     app_state::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, 
     get_postgres_pool, 
-    services::data_stores::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore}, 
-    utils::constants::{test, DATABASE_URL}, Application 
+    get_redis_client, 
+    services::data_stores::{HashmapTwoFACodeStore, MockEmailClient, PostgresUserStore, RedisBannedTokenStore}, 
+    utils::constants::{test, DATABASE_URL, REDIS_HOST_NAME}, Application 
 };
 
 pub struct TestApp {
@@ -28,8 +29,12 @@ impl TestApp {
         let db_name = Uuid::new_v4().to_string();
         let pg_pool = configure_postgresql(&db_name).await;
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-        let token_store = HashsetBannedTokenStore::new();
-        let token_store = Arc::new(RwLock::new(token_store.clone()));
+        // let token_store = HashsetBannedTokenStore::new();
+        // let token_store = Arc::new(RwLock::new(token_store.clone()));
+        let redis_con = configure_redis();
+        let redis_con = Arc::new(RwLock::new(redis_con));
+        let token_store = RedisBannedTokenStore::new(redis_con);
+        let token_store = Arc::new(RwLock::new(token_store));
         let two_fa_code_store = HashmapTwoFACodeStore::default();
         let two_fa_code_store = Arc::new(RwLock::new(two_fa_code_store));
         let email_client = MockEmailClient;
@@ -188,31 +193,15 @@ async fn delete_database(db_name: &str) {
         .await
         .expect("Failed to connect to Postgres");
 
-    // Kill any active connections to the database
-    // connection
-    //     .execute(
-    //         format!(
-    //             r#"
-    //             SELECT pg_terminate_backend(pg_stat_activity.pid)
-    //             FROM pg_stat_activity
-    //             WHERE pg_stat_activity.datname = '{}'
-    //               AND pid <> pg_backend_pid();
-    //     "#,
-    //             db_name
-    //         )
-    //         .as_str(),
-    //     )
-    //     .await
-    //     .expect("Failed to drop the database.");
-
-    // Drop the database
-    // connection
-    //     .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
-    //     .await
-    //     .expect("Failed to drop the database.");
-
     connection
         .execute(format!(r#"DROP DATABASE "{}" WITH (FORCE);"#, db_name).as_str())
         .await
         .expect("Failed to drop the database.");
+}
+
+fn configure_redis() -> redis::Connection {
+    get_redis_client(REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }

@@ -105,11 +105,6 @@ impl UserStore for PostgresUserStore {
     }
 }
 
-// Helper function to verify if a given password matches an expected hash
-// TODO: Hashing is a CPU-intensive operation. To avoid blocking
-// other async tasks, update this function to perform hashing on a
-// separate thread pool using tokio::task::spawn_blocking. Note that you
-// will need to update the input parameters to be String types instead of &str
 fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
@@ -121,11 +116,6 @@ fn verify_password_hash(
         .map_err(|e| e.into())
 }
 
-// Helper function to hash passwords before persisting them in the database.
-// TODO: Hashing is a CPU-intensive operation. To avoid blocking
-// other async tasks, update this function to perform hashing on a
-// separate thread pool using tokio::task::spawn_blocking. Note that you
-// will need to update the input parameters to be String types instead of &str
 fn compute_password_hash(password: String) -> Result<String, Box<dyn Error>> {
     let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
     let password_hash = Argon2::new(

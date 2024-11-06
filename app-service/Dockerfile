@@ -1,4 +1,3 @@
-# Start with image that has the Rust toolchain installed
 FROM rust:1.77-alpine AS chef
 USER root
 # Add cargo-chef to cache dependencies

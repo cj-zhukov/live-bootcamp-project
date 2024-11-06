@@ -21,13 +21,20 @@ pub static DATABASE_URL: LazyLock<String> = LazyLock::new(|| {
     secret
 });
 
+pub static REDIS_HOST_NAME: LazyLock<String> = LazyLock::new(|| {
+    dotenv().ok();
+    std_env::var(env::REDIS_HOST_NAME_ENV_VAR).unwrap_or(DEFAULT_REDIS_HOSTNAME.to_owned())
+});
+
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
     pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
+    pub const REDIS_HOST_NAME_ENV_VAR: &str = "REDIS_HOST_NAME";
 }
 
 pub const JWT_COOKIE_NAME: &str = "jwt";
 pub const PG_TABLE_NAME: &str = "users";
+pub const DEFAULT_REDIS_HOSTNAME: &str = "127.0.0.1"; 
 
 pub mod prod {
     pub const APP_ADDRESS: &str = "0.0.0.0:3000";

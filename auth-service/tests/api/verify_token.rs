@@ -88,7 +88,6 @@ async fn should_return_401_if_banned_token() {
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
@@ -97,7 +96,6 @@ async fn should_return_401_if_banned_token() {
     });
 
     let response = app.post_login(&login_body).await;
-
     assert_eq!(response.status().as_u16(), 200);
 
     let auth_cookie = response
