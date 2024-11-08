@@ -105,20 +105,6 @@ jobs:
 
     - name: Copy compose.yml to droplet
       run: sshpass -v -p ${{ secrets.DROPLET_PASSWORD }} scp -o StrictHostKeyChecking=no compose.yml root@${{ vars.DROPLET_IP }}:~
-
-    - name: Deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ vars.DROPLET_IP }}
-        username: root
-        password: ${{ secrets.DROPLET_PASSWORD }}
-        script: |
-          cd ~
-          export JWT_SECRET=${{ secrets.JWT_SECRET }}
-          export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
-          docker compose down
-          docker compose pull
-          docker compose up -d
     
     - name: Deploy
       uses: appleboy/ssh-action@master
