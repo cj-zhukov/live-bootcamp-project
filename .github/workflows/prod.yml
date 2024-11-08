@@ -1,12 +1,11 @@
 name: Build, Test and Deploy to Prod
 
-# Trigger the workflow when changes are pushed to the main branch
 on:
   push:
     branches:
       - main
-  # workflow_dispatch:
 
+# New! We want to make sure SQLx doesn't throw compile time errors so we force offline mode.
 env:
   SQLX_OFFLINE: true
 
@@ -14,14 +13,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # new
+    # New! Our tests now require a running PostgreSQL and Redis instance!
+    # Service containers to run with the `test` container job
     services:
       postgres:
+        # Docker Hub image
         image: postgres:15.2-alpine
+        # Environment variables scoped only for the `postgres` element
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: postgres
+        # Opens tcp port 5432 on the host and service container
         ports:
           - 5432:5432
       redis:
@@ -30,11 +33,9 @@ jobs:
           - 6379:6379
 
     steps:
-      # Checkout code from the repository
     - name: Checkout code
-      uses: actions/checkout@v2 # v4
+      uses: actions/checkout@v2
 
-      # Cache dependencies to speed up build times
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
@@ -47,7 +48,10 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Install Rust
-      run: rustup update stable && rustup default stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
 
     - name: Build and test app-service code
       working-directory: ./app-service
@@ -55,6 +59,7 @@ jobs:
         cargo build --verbose
         cargo test --verbose
 
+      # New! Added DATABASE_URL environment variable!
     - name: Build and test auth-service code
       working-directory: ./auth-service
       run: |
@@ -63,7 +68,6 @@ jobs:
         cargo build --verbose
         cargo test --verbose
 
-      # Set up Docker Buildx for multi-platform builds
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -90,7 +94,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v1
@@ -103,7 +107,8 @@ jobs:
 
     - name: Copy compose.yml to droplet
       run: sshpass -v -p ${{ secrets.DROPLET_PASSWORD }} scp -o StrictHostKeyChecking=no compose.yml root@${{ vars.DROPLET_IP }}:~
-    
+
+      # New! Added POSTGRES_PASSWORD environment variable!
     - name: Deploy
       uses: appleboy/ssh-action@master
       with:
