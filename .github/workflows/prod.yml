@@ -16,14 +16,11 @@ jobs:
 
     services:
       postgres:
-        # Docker Hub image
         image: postgres:15.2-alpine
-        # Environment variables scoped only for the `postgres` element
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: postgres
-        # Opens tcp port 5432 on the host and service container
         ports:
           - 5432:5432
       redis:
@@ -34,7 +31,7 @@ jobs:
     steps:
       # Checkout code from the repository
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2 # v4
 
       # Cache dependencies to speed up build times
     - name: Cache dependencies
