@@ -3,7 +3,7 @@ use auth_service::{domain::email::Email, routes::TwoFactorAuthResponse, utils::c
 
 #[tokio::test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -36,7 +36,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
 #[tokio::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -64,7 +64,8 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     assert_eq!(json_body.message, "2FA required".to_owned());
 
-    let two_fa_code_store = app.two_fa_code_store.read().await;
+    let two_fa_code_store = app.two_fa_code_store.clone();
+    let two_fa_code_store = two_fa_code_store.read().await;
 
     let code_tuple = two_fa_code_store
         .get_code(&Email::parse(&random_email).unwrap())
@@ -78,7 +79,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -128,7 +129,7 @@ async fn should_return_400_if_invalid_input() {
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -176,7 +177,7 @@ async fn should_return_401_if_incorrect_credentials() {
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 

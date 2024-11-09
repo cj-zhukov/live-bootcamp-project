@@ -22,19 +22,33 @@ impl RedisBannedTokenStore {
 impl BannedTokenStore for RedisBannedTokenStore {
     async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
         let key = get_key(token);
-        let mut conn = self.conn.write().await;
-        let secs: u64 = TOKEN_TTL_SECONDS.try_into().map_err(|_| BannedTokenStoreError::UnexpectedError)?;
-        let _res = conn.set_ex(key, true, secs).map_err(|_| BannedTokenStoreError::UnexpectedError)?;
+        let value = true;
+
+        let secs: u64 = TOKEN_TTL_SECONDS
+            .try_into()
+            .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
+
+        let _: () = self
+            .conn
+            .write()
+            .await
+            .set_ex(key, value, secs)
+            .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
 
         Ok(())
     }
 
     async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
-        let mut conn = self.conn.write().await;
         let key = get_key(token);
-        let res = conn.exists(key).map_err(|_| BannedTokenStoreError::UnexpectedError)?;
 
-        Ok(res)
+        let is_banned: bool = self
+            .conn
+            .write()
+            .await
+            .exists(key)
+            .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
+
+        Ok(is_banned)
     }
 }
 

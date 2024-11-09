@@ -20,6 +20,7 @@ pub struct TestApp {
     pub token_store: BannedTokenStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
     pub db_name: String,
+    pub clean_up_called: bool,
 }
 
 impl TestApp {
@@ -60,7 +61,7 @@ impl TestApp {
             .build()
             .unwrap();
 
-        Self { address, cookie_jar, http_client, token_store, two_fa_code_store, db_name }
+        Self { address, cookie_jar, http_client, token_store, two_fa_code_store, db_name, clean_up_called: false }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
@@ -139,8 +140,14 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn clean_up(&self) {
+    pub async fn clean_up(&mut self) {
+        if self.clean_up_called {
+            return;
+        }
+
         delete_database(&self.db_name).await;
+
+        self.clean_up_called = true;
     }
 }
 

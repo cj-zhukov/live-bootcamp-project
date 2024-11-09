@@ -4,7 +4,7 @@ use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
 async fn should_return_200_valid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -49,7 +49,7 @@ async fn should_return_200_valid_token() {
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let test_cases = vec!["", "invalid_token"];
 
@@ -77,7 +77,7 @@ async fn should_return_401_if_invalid_token() {
 
 #[tokio::test]
 async fn should_return_401_if_banned_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -135,7 +135,7 @@ async fn should_return_401_if_banned_token() {
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let test_cases = vec![
         serde_json::json!({
