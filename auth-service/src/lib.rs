@@ -50,9 +50,9 @@ impl Application {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(signup))
-            // .route("/login", post(login))
-            // .route("/logout", post(logout))
-            // .route("/verify-2fa", post(verify_2fa))
+            .route("/login", post(login))
+            .route("/logout", post(logout))
+            .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
             // .route("/delete-account", post(delete_account))
             .with_state(app_state)
@@ -103,7 +103,7 @@ pub struct ErrorResponse {
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         log_error_chain(&self);
-        
+
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),

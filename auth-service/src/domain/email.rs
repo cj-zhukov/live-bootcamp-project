@@ -1,12 +1,14 @@
+use color_eyre::eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Email(String);
 
 impl Email {
-    pub fn parse(input: &str) -> Result<Self, String> {
+    pub fn parse(input: &str) -> Result<Self> {
         if !input.contains('@') || input.is_empty() {
-            return Err(format!("failed parsing email: {}", input));
+            // return Err(format!("failed parsing email: {}", input));
+            return Err(eyre!("Failed parsing email"));
         } 
         Ok(Self(input.to_string()))
     }

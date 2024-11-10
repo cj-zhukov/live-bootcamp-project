@@ -1,6 +1,8 @@
 use rand::prelude::*;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use color_eyre::eyre::{eyre, Context, Report, Result};
+use thiserror::Error;
 
 use crate::domain::email::Email;
 
@@ -11,19 +13,37 @@ pub trait TwoFACodeStore {
     async fn get_code(&self, email: &Email) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+// #[derive(Debug, PartialEq)]
+// pub enum TwoFACodeStoreError {
+//     LoginAttemptIdNotFound,
+//     UnexpectedError,
+// }
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login Attempt ID not found")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
+    pub fn parse(id: String) -> Result<Self> {
         let s = Uuid::parse_str(&id)
-            .map_err(|e| format!("failed parsing id: {} to uuid cause: {}", id, e))?;
+            .wrap_err("Invalid login attempt id")?;
 
         Ok(Self(s.to_string()))
     }
@@ -46,19 +66,15 @@ impl AsRef<str> for LoginAttemptId {
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
-        // match code.len() == 6 && code.chars().all(char::is_numeric) {
-        //     true => Ok(Self(code)),
-        //     false => Err(format!("failed parsing code: {}", code)),
-        // }
+    pub fn parse(code: String) -> Result<Self> {
         let code_as_u32 = code
             .parse::<u32>()
-            .map_err(|_| "Invalid 2FA code".to_owned())?;
+            .wrap_err("Invalid 2FA code")?;
 
         if (100_000..=999_999).contains(&code_as_u32) {
             Ok(Self(code))
         } else {
-            Err("Invalid 2FA code".to_owned())
+            Err(eyre!("Invalid 2FA code"))
         }
     }
 }
