@@ -4,7 +4,7 @@ use argon2::{
     password_hash::SaltString, Algorithm, Argon2, Params, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
-
+use color_eyre::eyre::{eyre, Context, Result};
 use serde::{Serialize, Deserialize};
 use sqlx::PgPool;
 
@@ -33,7 +33,7 @@ impl UserStore for PostgresUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         let password = compute_password_hash(user.password.as_ref().to_owned())
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?;
+            .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         let sql = format!("insert into {} (email, password_hash, requires_2fa) values ($1, $2, $3)", PG_TABLE_NAME);
         sqlx::query(&sql)
@@ -42,7 +42,7 @@ impl UserStore for PostgresUserStore {
             .bind(user.requires_2fa)
             .execute(&self.pool)
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?;
+            .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         Ok(())
     }
@@ -55,10 +55,14 @@ impl UserStore for PostgresUserStore {
             .bind(email.as_ref())
             .fetch_optional(&self.pool)
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?
+            .map_err(|e| UserStoreError::UnexpectedError(e.into()))?
             .map(|u| {
-                let email = Email::parse(&u.email).map_err(|_| UserStoreError::InvalidCredentials)?;
-                let password = Password::parse(&u.password_hash).map_err(|_| UserStoreError::InvalidCredentials)?;
+                let email = Email::parse(&u.email)
+                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?;
+
+                let password = Password::parse(&u.password_hash)
+                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?;
+
                 Ok(User::new(email, password, u.requires_2fa))
             })
             .ok_or(UserStoreError::UserNotFound)?
@@ -85,13 +89,13 @@ impl UserStore for PostgresUserStore {
 async fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> Result<()> {
     let res = tokio::task::spawn_blocking(move || {
         let expected_password_hash: PasswordHash<'_> = PasswordHash::new(&expected_password_hash)?;
 
         Argon2::default()
             .verify_password(password_candidate.as_bytes(), &expected_password_hash)
-            .map_err(|e| e.into())
+            .wrap_err("failed to verify password hash")
     })
     .await;
 
@@ -99,18 +103,24 @@ async fn verify_password_hash(
 }
 
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let res = tokio::task::spawn_blocking(move || {
-        let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
-        let password_hash = Argon2::new(
-            Algorithm::Argon2id,
-            Version::V0x13,
-            Params::new(15000, 2, 1, None)?,
-        )
-        .hash_password(password.as_bytes(), &salt)?
-        .to_string();
+async fn compute_password_hash(password: String) -> Result<String> {
+    let current_span: tracing::Span = tracing::Span::current();
 
-        Ok(password_hash)
+    let res = tokio::task::spawn_blocking(move || {
+        current_span.in_scope(|| {
+            let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
+            let password_hash = Argon2::new(
+                Algorithm::Argon2id,
+                Version::V0x13,
+                Params::new(15000, 2, 1, None)?,
+            )
+            .hash_password(password.as_bytes(), &salt)?
+            .to_string();
+    
+            Ok(password_hash)
+            // Err(Box::new(std::io::Error::other("oh no")) as Box<dyn Error + Send +  Sync>)
+            // Err(eyre!("oh no")) // testing
+        })
     })
     .await;
 

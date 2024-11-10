@@ -17,7 +17,7 @@ pub struct SignupResponse {
     pub message: String,
 }
 
-#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
+#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
@@ -37,10 +37,10 @@ pub async fn signup(
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => return Err(AuthAPIError::UserAlreadyExists),
             UserStoreError::InvalidCredentials => return Err(AuthAPIError::InvalidCredentials),
-            UserStoreError::UnexpectedError => return Err(AuthAPIError::UnexpectedError),
+            UserStoreError::UnexpectedError(e) => return Err(AuthAPIError::UnexpectedError(e.into())),
             UserStoreError::UserNotFound => {
                 user_store.add_user(user).await
-                    .map_err(|_| AuthAPIError::UnexpectedError)?;
+                    .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
         
                 let response = Json(SignupResponse {
                     message: "User created successfully!".to_string(),
@@ -50,4 +50,14 @@ pub async fn signup(
             }
         }
     }
+
+    // if let Err(e) = user_store.add_user(user).await {
+    //     return Err(AuthAPIError::UnexpectedError(e.into()));
+    // }
+
+    // let response = Json(SignupResponse {
+    //     message: "User created successfully!".to_string(),
+    // });
+
+    // Ok((StatusCode::CREATED, response))
 }
