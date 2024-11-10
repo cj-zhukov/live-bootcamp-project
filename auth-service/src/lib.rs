@@ -8,8 +8,9 @@ use axum::{
 use redis::{Client, RedisResult};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
+use utils::tracing::{make_span_with_request_id, on_request, on_response};
 use std::error::Error;
-use tower_http::{cors::CorsLayer, services::ServeDir};
+use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 
 pub mod routes;
 pub mod services;
@@ -48,7 +49,6 @@ impl Application {
 
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
-            .route("/foo", get(|| async { "ok" }))
             .route("/signup", post(signup))
             .route("/login", post(login))
             .route("/logout", post(logout))
@@ -56,7 +56,13 @@ impl Application {
             .route("/verify-token", post(verify_token))
             .route("/delete-account", post(delete_account))
             .with_state(app_state)
-            .layer(cors);
+            .layer(cors)
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response),
+            );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -66,7 +72,7 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }

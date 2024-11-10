@@ -17,6 +17,7 @@ pub struct SignupResponse {
     pub message: String,
 }
 
+#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
 pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
@@ -30,9 +31,7 @@ pub async fn signup(
     let user = User::new(email.clone(), pwd, request.requires_2fa);
 
     let mut user_store = state.user_store.write().await;
-    // if let Ok(_u) = user_store.get_user(&email).await {
-    //     return Err(AuthAPIError::UserAlreadyExists);
-    // }
+
     match user_store.get_user(&email).await {
         Ok(_u) => return Err(AuthAPIError::UserAlreadyExists),
         Err(e) => match e {
