@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::app_state::AppState;
 use crate::domain::{email::Email, error::AuthAPIError, password::Password, user::User, data_stores::UserStoreError};
+use secrecy::Secret;
 
 #[derive(Deserialize)]
 pub struct SignupRequest {
-    pub email: String,
-    pub password: String,
+    pub email: Secret<String>,
+    pub password: Secret<String>,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
 }
@@ -22,10 +23,10 @@ pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    let email = Email::parse(&request.email)
+    let email = Email::parse(request.email)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    let pwd = Password::parse(&request.password)
+    let pwd = Password::parse(request.password)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user = User::new(email.clone(), pwd, request.requires_2fa);

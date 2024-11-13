@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use secrecy::Secret;
+
 use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::password::Password;
 use crate::domain::user::User;
@@ -60,11 +62,13 @@ impl UserStore for HashmapUserStore {
 mod tests {
     use super::*;
 
+    use secrecy::Secret;
+
     #[tokio::test]
     async fn test_add_user() {
         let mut map = HashmapUserStore::new();
-        let email = Email::parse("foo@com").unwrap();
-        let pwd = Password::parse("foobarbaz").unwrap();
+        let email = Email::parse(Secret::new("foo@com".to_string())).unwrap();
+        let pwd = Password::parse(Secret::new("foobarbaz".to_string())).unwrap();
         let user = User::new(email, pwd, false);
 
         // Test adding a new user
@@ -79,8 +83,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut map = HashmapUserStore::new();
-        let email = Email::parse("foo@com").unwrap();
-        let pwd = Password::parse("foobarbaz").unwrap();
+        let email = Email::parse(Secret::new("foo@com".to_string())).unwrap();
+        let pwd = Password::parse(Secret::new("foobarbaz".to_string())).unwrap();
         let user = User::new(email.clone(), pwd, false);
 
         // Test getting a user that exists
@@ -90,7 +94,7 @@ mod tests {
 
         // Test getting a user that doesn't exist
         let result = map
-            .get_user(&Email::parse("nonexistent@example.com").unwrap())
+            .get_user(&Email::parse(Secret::new("nonexistent@example.com".to_string())).unwrap())
             .await;
    
         assert_eq!(result, Err(UserStoreError::UserNotFound));
@@ -99,8 +103,8 @@ mod tests {
     #[tokio::test]
     async fn test_validate_user() {
         let mut map = HashmapUserStore::new();
-        let email = Email::parse("foo@com").unwrap();
-        let pwd = Password::parse("foobarbaz").unwrap();
+        let email = Email::parse(Secret::new("foo@com".to_string())).unwrap();
+        let pwd = Password::parse(Secret::new("foobarbaz".to_string())).unwrap();
         let user = User::new(email.clone(), pwd.clone(), false);
 
         // Test validating a user that exists with correct password
@@ -109,14 +113,14 @@ mod tests {
         assert_eq!(res, Ok(()));
 
         // Test validating a user that exists with incorrect password
-        let wrong_password = Password::parse("wrongpassword").unwrap();
+        let wrong_password = Password::parse(Secret::new("wrongpassword".to_string())).unwrap();
         let res = map.validate_user(&email, &wrong_password).await;
         assert_eq!(res, Err(UserStoreError::InvalidCredentials));
 
         // Test validating a user that doesn't exist
         let res = map
             .validate_user(
-                &Email::parse("nonexistent@example.com").unwrap(),
+                &Email::parse(Secret::new("nonexistent@example.com".to_string())).unwrap(),
                 &pwd,
             )
             .await;
@@ -127,8 +131,8 @@ mod tests {
     #[tokio::test]
     async fn test_delete_user() {
         let mut map = HashmapUserStore::new();
-        let email = Email::parse("foo@com").unwrap();
-        let pwd = Password::parse("foobarbaz").unwrap();
+        let email = Email::parse(Secret::new("foo@com".to_string())).unwrap();
+        let pwd = Password::parse(Secret::new("foobarbaz".to_string())).unwrap();
         let user = User::new(email.clone(), pwd, false);
 
         // Test getting a user that exists

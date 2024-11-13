@@ -9,6 +9,7 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use secrecy::{ExposeSecret, Secret};
 
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
@@ -26,8 +27,8 @@ pub struct TwoFactorAuthResponse {
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
+    pub email: Secret<String>,
+    pub password: Secret<String>,
 }
 
 #[tracing::instrument(name = "Login", skip_all)]
@@ -36,10 +37,10 @@ pub async fn login(
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
-    let email = Email::parse(&request.email)
+    let email = Email::parse(request.email)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    let pwd = Password::parse(&request.password)
+    let pwd = Password::parse(request.password)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user_store = &state.user_store.read().await;
@@ -83,16 +84,18 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
     let two_fa_code = TwoFACode::default();
 
     let mut code_store = state.two_fa_code_store.write().await;
-    code_store.add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone()).await
+    code_store.add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
+        .await
         .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 
     let email_client = state.email_client.read().await;
-    email_client.send_email(email, "2fa subject", two_fa_code.as_ref()).await
+    email_client.send_email(email, "2fa subject", two_fa_code.as_ref().expose_secret())
+        .await
         .map_err(|e| AuthAPIError::UnexpectedError(e))?;
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
         message: "2FA required".to_owned(),
-        login_attempt_id: login_attempt_id.as_ref().to_string(),
+        login_attempt_id: login_attempt_id.as_ref().expose_secret().clone(),
     }));
 
     Ok((jar, (StatusCode::PARTIAL_CONTENT, response)))

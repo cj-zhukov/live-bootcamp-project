@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use secrecy::{ExposeSecret, Secret};
 
 use crate::{
     app_state::app_state::AppState, 
@@ -10,9 +11,9 @@ use crate::{
     }, utils::auth::generate_auth_cookie
 };
 
-#[derive(Serialize, Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Verify2FARequest {
-    email: String,
+    email: Secret<String>,
     #[serde(rename = "loginAttemptId")]
     login_attempt_id: String,
     #[serde(rename = "2FACode")]
@@ -32,7 +33,7 @@ pub async fn verify_2fa(
     jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
-    let email = Email::parse(&request.email)
+    let email = Email::parse(request.email)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let login_attempt_id = LoginAttemptId::parse(request.login_attempt_id)
@@ -42,10 +43,12 @@ pub async fn verify_2fa(
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let mut two_fa_code_store = state.two_fa_code_store.write().await;
-    let (login_attempt_id_res, two_fa_code_res) = two_fa_code_store.get_code(&email).await
+    let (login_attempt_id_res, two_fa_code_res) = two_fa_code_store.get_code(&email)
+        .await
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
-    if login_attempt_id.as_ref() != login_attempt_id_res.as_ref() || two_fa_code.as_ref() != two_fa_code_res.as_ref() {
+    if login_attempt_id.as_ref().expose_secret() != login_attempt_id_res.as_ref().expose_secret() || 
+        two_fa_code.as_ref().expose_secret() != two_fa_code_res.as_ref().expose_secret() {
         return Err(AuthAPIError::IncorrectCredentials);
     }
 

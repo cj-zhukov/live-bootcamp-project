@@ -1,7 +1,8 @@
-use rand::prelude::*;
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use color_eyre::eyre::{eyre, Context, Report, Result};
+use rand::prelude::*;
+use serde::Deserialize;
+use uuid::Uuid;
+use secrecy::{Secret, ExposeSecret};
 use thiserror::Error;
 
 use crate::domain::email::Email;
@@ -13,11 +14,6 @@ pub trait TwoFACodeStore {
     async fn get_code(&self, email: &Email) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-// #[derive(Debug, PartialEq)]
-// pub enum TwoFACodeStoreError {
-//     LoginAttemptIdNotFound,
-//     UnexpectedError,
-// }
 #[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
     #[error("Login Attempt ID not found")]
@@ -37,33 +33,38 @@ impl PartialEq for TwoFACodeStoreError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct LoginAttemptId(String);
+#[derive(Debug, Clone, Deserialize)]
+pub struct LoginAttemptId(Secret<String>);
 
 impl LoginAttemptId {
     pub fn parse(id: String) -> Result<Self> {
         let s = Uuid::parse_str(&id)
             .wrap_err("Invalid login attempt id")?;
-
-        Ok(Self(s.to_string()))
+        Ok(Self(Secret::new(s.to_string())))
     }
 }
 
 impl Default for LoginAttemptId {
     fn default() -> Self {
         let id = Uuid::new_v4().to_string();
-        Self(id)
+        Self(Secret::new(id))
     }
 }
 
-impl AsRef<str> for LoginAttemptId {
-    fn as_ref(&self) -> &str {
+impl PartialEq for LoginAttemptId {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl AsRef<Secret<String>> for LoginAttemptId {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TwoFACode(String);
+#[derive(Clone, Debug, Deserialize)]
+pub struct TwoFACode(Secret<String>);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self> {
@@ -72,7 +73,7 @@ impl TwoFACode {
             .wrap_err("Invalid 2FA code")?;
 
         if (100_000..=999_999).contains(&code_as_u32) {
-            Ok(Self(code))
+            Ok(Self(Secret::new(code)))
         } else {
             Err(eyre!("Invalid 2FA code"))
         }
@@ -83,12 +84,18 @@ impl Default for TwoFACode {
     fn default() -> Self {
         let mut rng = rand::thread_rng();
         let rnd: u32 = rng.gen_range(100_000..=999_999);
-        Self(rnd.to_string())
+        Self(Secret::new(rnd.to_string()))
     }
 }
 
-impl AsRef<str> for TwoFACode {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for TwoFACode {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
+    }
+}
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }

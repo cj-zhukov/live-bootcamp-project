@@ -15,7 +15,7 @@ use auth_service::{
 #[tokio::main]
 async fn main() {
     color_eyre::install().expect("Failed to install color_eyre");
-    init_tracing().expect("Failed to initialize tracing");;
+    init_tracing().expect("Failed to initialize tracing");
     let pg_pool = configure_postgresql().await;
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
     let redis_con = configure_redis();

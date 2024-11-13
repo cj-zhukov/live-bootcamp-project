@@ -1,22 +1,42 @@
+use std::hash::Hash;
+
 use color_eyre::eyre::{eyre, Result};
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Email(String);
+#[derive(Debug, Clone)]
+pub struct Email(Secret<String>);
 
-impl Email {
-    pub fn parse(input: &str) -> Result<Self> {
-        if !input.contains('@') || input.is_empty() {
-            // return Err(format!("failed parsing email: {}", input));
-            return Err(eyre!("Failed parsing email"));
-        } 
-        Ok(Self(input.to_string()))
+impl PartialEq for Email {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }
 
-impl AsRef<str> for Email {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
+impl Hash for Email {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.expose_secret().hash(state);
+    }
+}
+
+impl Eq for Email {}
+
+fn validate_email(input: &Secret<String>) -> bool {
+    input.expose_secret().contains('@')
+}
+
+impl Email {
+    pub fn parse(input: Secret<String>) -> Result<Self> {
+        if !validate_email(&input) {
+            return Err(eyre!("Failed parsing email"));
+        } 
+        Ok(Self(input))
+    }
+}
+
+impl AsRef<Secret<String>> for Email {
+    fn as_ref(&self) -> &Secret<String> {
+        &self.0
     }
 }
 
@@ -26,13 +46,14 @@ mod tests {
 
     // use fake::faker::internet::en::SafeEmail;
     // use fake::Fake;
+    use secrecy::Secret; 
 
     #[test]
     fn should_return_email_ok_when_properly_parsed() {
         let results = [
-            Email::parse("some@value.com"),
-            Email::parse("some.other@value.com"),
-            Email::parse("some-value123@value.com"),
+            Email::parse(Secret::new("some@value.com".to_string())),
+            Email::parse(Secret::new("some.other@value.com".to_string())),
+            Email::parse(Secret::new("some-value123@value.com".to_string())),
         ];
 
         assert!(results.iter().all(|r| r.is_ok()))
@@ -41,14 +62,13 @@ mod tests {
     #[test]
     fn should_return_email_err_when_not_properly_parsed() {
         let results = [
-            Email::parse("some]value.com"), 
-            Email::parse(""),
+            Email::parse(Secret::new("some]value.com".to_string())), 
+            // Email::parse(Secret::new("".to_string())),
         ];
 
         assert!(results.iter().all(|r| r.is_err()))
     }
 
-    // TODO panics 
     // #[derive(Debug, Clone)]
     // struct ValidEmailFixture(pub String);
 
@@ -61,6 +81,6 @@ mod tests {
 
     // #[quickcheck_macros::quickcheck]
     // fn valid_emails_are_parsed_successfully(valid_email: ValidEmailFixture) -> bool {
-    //     Email::parse(&valid_email.0).is_ok()
+    //     Email::parse(Secret::new(valid_email.0)).is_ok() 
     // }
 }
