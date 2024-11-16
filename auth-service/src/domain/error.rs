@@ -21,13 +21,3 @@ pub enum AuthAPIError {
     #[error("Unexpected error")]
     UnexpectedError(#[source] Report),
 }
-
-// #[derive(Debug)]
-// pub enum AuthAPIError {
-//     UserAlreadyExists,
-//     InvalidCredentials,
-//     UnexpectedError,
-//     IncorrectCredentials,
-//     MissingToken,
-//     InvalidToken,
-// }

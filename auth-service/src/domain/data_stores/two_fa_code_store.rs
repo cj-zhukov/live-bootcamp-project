@@ -37,9 +37,9 @@ impl PartialEq for TwoFACodeStoreError {
 pub struct LoginAttemptId(Secret<String>);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self> {
-        let s = Uuid::parse_str(&id)
-            .wrap_err("Invalid login attempt id")?;
+    pub fn parse(id: Secret<String>) -> Result<Self> {
+        let s = Uuid::parse_str(id.expose_secret())
+            .map_err(|_| eyre!("Invalid login attempt id"))?;
         Ok(Self(Secret::new(s.to_string())))
     }
 }
@@ -67,13 +67,13 @@ impl AsRef<Secret<String>> for LoginAttemptId {
 pub struct TwoFACode(Secret<String>);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self> {
+    pub fn parse(code: Secret<String>) -> Result<Self> {
         let code_as_u32 = code
-            .parse::<u32>()
-            .wrap_err("Invalid 2FA code")?;
+            .expose_secret()
+            .parse::<u32>()?;
 
         if (100_000..=999_999).contains(&code_as_u32) {
-            Ok(Self(Secret::new(code)))
+            Ok(Self(code))
         } else {
             Err(eyre!("Invalid 2FA code"))
         }

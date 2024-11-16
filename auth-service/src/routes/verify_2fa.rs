@@ -15,9 +15,9 @@ use crate::{
 pub struct Verify2FARequest {
     email: Secret<String>,
     #[serde(rename = "loginAttemptId")]
-    login_attempt_id: String,
+    login_attempt_id: Secret<String>,
     #[serde(rename = "2FACode")]
-    two_fa_code: String,
+    two_fa_code: Secret<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -56,7 +56,8 @@ pub async fn verify_2fa(
         .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
     let updated_jar = jar.add(cookie);
 
-    two_fa_code_store.remove_code(&email).await
+    two_fa_code_store.remove_code(&email)
+        .await
         .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 
     Ok((updated_jar, StatusCode::OK))

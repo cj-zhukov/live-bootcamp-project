@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::Context;
 use redis::{Commands, Connection};
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
@@ -73,10 +73,10 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
                     .wrap_err("failed to deserialize 2FA tuple")
                     .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
-                let login_attempt_id = LoginAttemptId::parse(data.0)
+                let login_attempt_id = LoginAttemptId::parse(Secret::new(data.0))
                     .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
-                let email_code = TwoFACode::parse(data.1)
+                let email_code = TwoFACode::parse(Secret::new(data.1))
                     .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 Ok((login_attempt_id, email_code))

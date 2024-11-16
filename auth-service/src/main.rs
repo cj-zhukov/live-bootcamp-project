@@ -19,6 +19,7 @@ use auth_service::{
 async fn main() {
     color_eyre::install().expect("Failed to install color_eyre");
     init_tracing().expect("Failed to initialize tracing");
+    
     let pg_pool = configure_postgresql().await;
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
     let redis_con = configure_redis();
@@ -28,7 +29,6 @@ async fn main() {
     let redis_con = configure_redis();
     let two_fa_code_store = RedisTwoFACodeStore::new(Arc::new(RwLock::new(redis_con)));
     let two_fa_code_store = Arc::new(RwLock::new(two_fa_code_store));
-    // let email_client = Arc::new(RwLock::new(MockEmailClient));
     let email_client = Arc::new(RwLock::new(configure_postmark_email_client()));
 
     let app_state = AppState::new(user_store, token_store, two_fa_code_store, email_client);

@@ -61,12 +61,12 @@ async fn should_return_200_if_correct_code() {
         .await
         .unwrap();
 
-    let code = code_tuple.1.as_ref();
+    let code = code_tuple.1.as_ref().expose_secret();
 
     let request_body = serde_json::json!({
         "email": random_email,
         "loginAttemptId": login_attempt_id,
-        "2FACode": code.expose_secret()
+        "2FACode": code,
     });
 
     let response = app.post_verify_2fa(&request_body).await;
@@ -92,21 +92,21 @@ async fn should_return_400_if_invalid_input() {
 
     let test_cases = vec![
         (
-            "invalid_email".to_string(),
-            login_attempt_id.expose_secret().to_string(),
-            two_fa_code.expose_secret().to_string(),
+            "invalid_email",
+            login_attempt_id.expose_secret().as_str(),
+            two_fa_code.expose_secret().as_str(),
         ),
         (
-            random_email.clone(),
-            "invalid_login_attempt_id".to_string(),
-            two_fa_code.expose_secret().to_string(),
+            random_email.as_str(),
+            "invalid_login_attempt_id",
+            two_fa_code.expose_secret().as_str(),
         ),
         (
-            random_email.clone(),
-            login_attempt_id.expose_secret().to_string(),
-            "invalid_two_fa_code".to_string(),
+            random_email.as_str(),
+            login_attempt_id.expose_secret().as_str(),
+            "invalid_two_fa_code",
         ),
-        ("".to_string(), "".to_string(), "".to_string()),
+        ("", "", ""),
     ];
 
     for (email, login_attempt_id, code) in test_cases {
@@ -154,6 +154,7 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_eq!(response.status().as_u16(), 201);
 
     // --------------------------
+
     Mock::given(path("/email"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
@@ -187,13 +188,13 @@ async fn should_return_401_if_incorrect_credentials() {
         .await
         .unwrap();
 
-    let two_fa_code = code_tuple.1.as_ref().expose_secret();
+    let two_fa_code = code_tuple.1.as_ref().expose_secret().as_str();
 
     // --------------------------
 
     let incorrect_email = get_random_email();
-    let incorrect_login_attempt_id = LoginAttemptId::default();
-    let incorrect_two_fa_code = TwoFACode::default();
+    let incorrect_login_attempt_id = LoginAttemptId::default().as_ref().to_owned();
+    let incorrect_two_fa_code = TwoFACode::default().as_ref().to_owned();
 
     let test_cases = vec![
         (
@@ -203,13 +204,13 @@ async fn should_return_401_if_incorrect_credentials() {
         ),
         (
             random_email.as_str(),
-            incorrect_login_attempt_id.as_ref().expose_secret(),
+            incorrect_login_attempt_id.expose_secret().as_str(),
             two_fa_code,
         ),
         (
             random_email.as_str(),
             login_attempt_id.as_str(),
-            incorrect_two_fa_code.as_ref().expose_secret(),
+            incorrect_two_fa_code.expose_secret().as_str()
         ),
     ];
 
@@ -391,7 +392,7 @@ async fn should_return_422_if_malformed_input() {
     let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
-    let login_attempt_id = LoginAttemptId::default();
+    let login_attempt_id = LoginAttemptId::default().as_ref().to_owned();
 
     let test_cases = [
         serde_json::json!({
@@ -401,7 +402,7 @@ async fn should_return_422_if_malformed_input() {
             "email": random_email,
         }),
         serde_json::json!({
-            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
+            "loginAttemptId": login_attempt_id.expose_secret().as_str(),
         }),
         serde_json::json!({
             "2FACode": "123456",
@@ -409,11 +410,11 @@ async fn should_return_422_if_malformed_input() {
         }),
         serde_json::json!({
             "2FACode": "123456",
-            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
+            "loginAttemptId": login_attempt_id.expose_secret().as_str(),
         }),
         serde_json::json!({
             "email": random_email,
-            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
+            "loginAttemptId": login_attempt_id.expose_secret().as_str(),
         }),
         serde_json::json!({}),
     ];

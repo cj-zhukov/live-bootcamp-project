@@ -117,8 +117,6 @@ async fn compute_password_hash(password: Secret<String>) -> Result<Secret<String
             .to_string();
     
             Ok(Secret::new(password_hash))
-            // Err(Box::new(std::io::Error::other("oh no")) as Box<dyn Error + Send +  Sync>)
-            // Err(eyre!("oh no")) // testing
         })
     })
     .await;

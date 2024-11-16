@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::{cookie::Cookie, CookieJar};
+use secrecy::Secret;
 
 use crate::{
     app_state::app_state::AppState, 
@@ -15,14 +16,14 @@ pub async fn logout(
     let cookie = jar.get(JWT_COOKIE_NAME)
         .ok_or(AuthAPIError::MissingToken)?;
 
-    let token = cookie.value().to_owned();
+    let token = Secret::new(cookie.value().to_owned());
     validate_token(&token, state.token_store.clone()).await
         .map_err(|_| AuthAPIError::InvalidToken)?;
 
     state.token_store
         .write()
         .await
-        .add_token(&token)
+        .add_token(token)
         .await
         .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 

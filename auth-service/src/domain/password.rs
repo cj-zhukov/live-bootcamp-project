@@ -6,8 +6,6 @@ pub struct Password(Secret<String>);
 
 impl PartialEq for Password { 
     fn eq(&self, other: &Self) -> bool {
-        // We can use the expose_secret method to expose the secret in a
-        // controlled manner when needed!
         self.0.expose_secret() == other.0.expose_secret() 
     }
 }
@@ -65,17 +63,17 @@ mod tests {
         assert!(results.iter().all(|r| r.is_ok()))
     }
 
-    // #[derive(Debug, Clone)]
-    // struct ValidPasswordFixture(pub Secret<String>); 
+    #[derive(Debug, Clone)]
+    struct ValidPasswordFixture(pub Secret<String>); 
 
-    // impl quickcheck::Arbitrary for ValidPasswordFixture {
-    //     fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
-    //         let password = FakePassword(8..30).fake_with_rng(g);
-    //         Self(Secret::new(password)) 
-    //     }
-    // }
-    // #[quickcheck_macros::quickcheck]
-    // fn valid_passwords_are_parsed_successfully(valid_password: ValidPasswordFixture) -> bool {
-    //     Password::parse(valid_password.0).is_ok()
-    // }
+    impl quickcheck::Arbitrary for ValidPasswordFixture {
+        fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+            let password = FakePassword(8..30).fake_with_rng(g);
+            Self(Secret::new(password)) 
+        }
+    }
+    #[quickcheck_macros::quickcheck]
+    fn valid_passwords_are_parsed_successfully(valid_password: ValidPasswordFixture) -> bool {
+        Password::parse(valid_password.0).is_ok()
+    }
 }

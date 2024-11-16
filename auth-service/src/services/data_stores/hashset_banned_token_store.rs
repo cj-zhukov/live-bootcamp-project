@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use secrecy::{ExposeSecret, Secret};
+
 use crate::domain::data_stores::{BannedTokenStore, BannedTokenStoreError};  
 
 #[derive(Default, Clone)]
@@ -15,13 +17,13 @@ impl HashsetBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
-        self.tokens.insert(token.to_string());
+    async fn add_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError> {
+        self.tokens.insert(token.expose_secret().to_string());
         Ok(())
     }
 
-    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
-        Ok(self.tokens.contains(token))
+    async fn contains_token(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError> {
+        Ok(self.tokens.contains(token.expose_secret()))
     }
 }
 
@@ -34,7 +36,7 @@ mod tests {
         let mut store = HashsetBannedTokenStore::new();
         let token = "test_token".to_owned();
 
-        let res = store.add_token(&token).await;
+        let res = store.add_token(Secret::new(token.clone())).await;
 
         assert!(res.is_ok());
         assert!(store.tokens.contains(&token));
@@ -46,8 +48,9 @@ mod tests {
         let token = "test_token".to_owned();
         store.tokens.insert(token.clone());
 
-        let result = store.contains_token(&token).await;
+        let res = store.contains_token(&Secret::new(token.clone())).await;
 
-        assert!(result.unwrap());
+        assert!(res.is_ok());
+        assert!(store.tokens.contains(&token));
     }
 }

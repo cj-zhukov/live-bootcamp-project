@@ -1,10 +1,6 @@
 use color_eyre::eyre::{Report, Result};
+use secrecy::Secret;
 use thiserror::Error;
-
-// #[derive(Debug, PartialEq)]
-// pub enum BannedTokenStoreError {
-//     UnexpectedError,
-// }
 
 #[derive(Debug, Error)]
 pub enum BannedTokenStoreError {
@@ -14,6 +10,6 @@ pub enum BannedTokenStoreError {
 
 #[async_trait::async_trait]
 pub trait BannedTokenStore {
-    async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError>;
-    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn add_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn contains_token(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError>;
 }

@@ -13,14 +13,6 @@ pub trait UserStore {
     async fn delete_user(&mut self, email: &Email) -> Result<(), UserStoreError>;
 }
 
-// #[derive(Debug, PartialEq)]
-// pub enum UserStoreError {
-//     UserAlreadyExists,
-//     UserNotFound,
-//     InvalidCredentials,
-//     UnexpectedError,
-// }
-
 #[derive(Debug, Error)]
 pub enum UserStoreError {
     #[error("User already exists")]

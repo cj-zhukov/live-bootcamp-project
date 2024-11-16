@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use secrecy::Secret;
-
 use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::password::Password;
 use crate::domain::user::User;

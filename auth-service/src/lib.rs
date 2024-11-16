@@ -1,7 +1,7 @@
 use axum::{
     http::{Method, StatusCode},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::post,
     serve::Serve,
     Json, Router,
 };
@@ -55,7 +55,7 @@ impl Application {
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
-            // .route("/delete-account", post(delete_account))
+            // .route("/delete-account", post(delete_account)) # TODO delete-account router complete
             .with_state(app_state)
             .layer(cors)
             .layer(
@@ -83,24 +83,6 @@ pub struct ErrorResponse {
     pub error: String,
 }
 
-// impl IntoResponse for AuthAPIError {
-//     fn into_response(self) -> Response {
-//         let (status, error_message) = match self {
-//             Self::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-//             Self::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
-//             Self::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
-//             Self::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
-//             Self::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
-//             Self::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
-//         };
-        
-//         let body = Json(ErrorResponse {
-//             error: error_message.to_string(),
-//         });
-        
-//         (status, body).into_response()
-//     }
-// }
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         log_error_chain(&self);
@@ -135,7 +117,10 @@ fn log_error_chain(e: &(dyn Error + 'static)) {
 }
 
 pub async fn get_postgres_pool(url: &Secret<String>) -> Result<PgPool, sqlx::Error> {
-    PgPoolOptions::new().max_connections(5).connect(url.expose_secret()).await
+    PgPoolOptions::new()
+        .max_connections(5)
+        .connect(url.expose_secret())
+        .await
 }
 
 pub fn get_redis_client(redis_hostname: String) -> RedisResult<Client> {
