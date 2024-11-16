@@ -11,16 +11,10 @@ use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use secrecy::{ExposeSecret, Secret};
 
-// #[derive(Deserialize)]
-// pub struct LoginRequest {
-//     pub email: Secret<String>,
-//     pub password: Secret<String>,
-// }
-
 #[derive(Deserialize)]
 pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
+    pub email: Secret<String>,
+    pub password: Secret<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -43,10 +37,10 @@ pub async fn login(
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
-    let email = Email::parse(Secret::new(request.email))
+    let email = Email::parse(request.email)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    let pwd = Password::parse(Secret::new(request.password))
+    let pwd = Password::parse(request.password)
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user_store = &state.user_store.read().await;
