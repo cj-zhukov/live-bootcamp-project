@@ -48,6 +48,7 @@ pub mod env {
 pub const JWT_COOKIE_NAME: &str = "jwt";
 pub const PG_TABLE_NAME: &str = "users";
 pub const DEFAULT_REDIS_HOSTNAME: &str = "127.0.0.1"; 
+pub const LOG_NAME: &str = "auth.log";
 
 pub mod prod {
     pub const APP_ADDRESS: &str = "0.0.0.0:3000";

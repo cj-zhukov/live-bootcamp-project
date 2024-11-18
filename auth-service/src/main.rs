@@ -10,15 +10,15 @@ use auth_service::{
     domain::email::Email, 
     get_postgres_pool, 
     get_redis_client, 
-    services::data_stores::{MockEmailClient, PostgresUserStore, PostmarkEmailClient, RedisBannedTokenStore, RedisTwoFACodeStore}, 
-    utils::{constants::{prod, DATABASE_URL, POSTMARK_AUTH_TOKEN, REDIS_HOST_NAME}, tracing::init_tracing}, 
+    services::data_stores::{PostgresUserStore, PostmarkEmailClient, RedisBannedTokenStore, RedisTwoFACodeStore}, 
+    utils::{constants::{prod, DATABASE_URL, POSTMARK_AUTH_TOKEN, REDIS_HOST_NAME, LOG_NAME}, tracing::init_tracing}, 
     Application
 };
 
 #[tokio::main]
 async fn main() {
     color_eyre::install().expect("Failed to install color_eyre");
-    init_tracing().expect("Failed to initialize tracing");
+    init_tracing(LOG_NAME).expect("Failed to initialize tracing");
     
     let pg_pool = configure_postgresql().await;
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
